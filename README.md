@@ -202,3 +202,9 @@ The midi operator interprets any letter above the chromatic scale as a transpose
 - Support this project through [Patreon](https://www.patreon.com/hundredrabbits).
 - See the [License](LICENSE.md) file for license rights and limitations (MIT).
 - Pull Requests are welcome!
+
+## Modifications
+
+- Added swing functionality, shown in UI right of bpm.
+- Use Cmd+] and Cmd+[ to increment swing up or down, between 1-99. Fully straight rhythm is swing at 50.
+- Similar to $bpm: you can now use $swing: (or $sw:) in the grid or in the command line.
