@@ -102,6 +102,8 @@ function Client () {
     this.acels.set('Clock', 'Decr. Speed', '<', () => { this.clock.modSpeed(-1) })
     this.acels.set('Clock', 'Incr. Speed(10x)', 'CmdOrCtrl+>', () => { this.clock.modSpeed(10, true) })
     this.acels.set('Clock', 'Decr. Speed(10x)', 'CmdOrCtrl+<', () => { this.clock.modSpeed(-10, true) })
+    this.acels.set('Clock', 'Incr. Swing', 'CmdOrCtrl+]', () => { this.clock.modSwing(1) })
+    this.acels.set('Clock', 'Decr. Swing', 'CmdOrCtrl+[', () => { this.clock.modSwing(-1) })
 
     this.acels.set('View', 'Toggle Retina', 'Tab', () => { this.toggleRetina() })
     this.acels.set('View', 'Toggle Guide', 'CmdOrCtrl+G', () => { this.toggleGuide() })
@@ -332,7 +334,9 @@ function Client () {
       this.write(this.orca.f < 25 ? `ver${this.version}` : `${Object.keys(this.source.cache).length} mods`, this.grid.w * 0, this.orca.h + 1, this.grid.w)
       this.write(`${this.orca.w}x${this.orca.h}`, this.grid.w * 1, this.orca.h + 1, this.grid.w)
       this.write(`${this.grid.w}/${this.grid.h}${this.tile.w !== 10 ? ' ' + (this.tile.w / 10).toFixed(1) : ''}`, this.grid.w * 2, this.orca.h + 1, this.grid.w)
-      this.write(`${this.clock}`, this.grid.w * 3, this.orca.h + 1, this.grid.w, this.clock.isPuppet ? 3 : this.io.midi.isClock ? 11 : this.clock.isPaused ? 20 : 2)
+      const _clock = `${this.clock}`
+      const _clockPad = _clock.endsWith('*') ? ' ' : '  ' // keep swing aligned whether or not the beat asterisk is showing
+      this.write(`${_clock}${_clockPad}${this.clock.swingToString()}`, this.grid.w * 3, this.orca.h + 1, this.grid.w, this.clock.isPuppet ? 3 : this.io.midi.isClock ? 11 : this.clock.isPaused ? 20 : 2)
       this.write(`${display(Object.keys(this.orca.variables).join(''), this.orca.f, this.grid.w - 1)}`, this.grid.w * 4, this.orca.h + 1, this.grid.w - 1)
       this.write(this.orca.f < 250 ? `> ${this.io.midi.toOutputString()}` : '', this.grid.w * 5, this.orca.h + 1, this.grid.w * 4)
     }

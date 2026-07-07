@@ -46,6 +46,7 @@ function Commander (client) {
     // Time
     apm: (p) => { client.clock.setSpeed(null, p.int) },
     bpm: (p) => { client.clock.setSpeed(p.int, p.int, true) },
+    swing: (p) => { client.clock.setSwing(p.int) },
     frame: (p) => { client.clock.setFrame(p.int) },
     rewind: (p) => { client.clock.setFrame(client.orca.f - p.int) },
     skip: (p) => { client.clock.setFrame(client.orca.f + p.int) },

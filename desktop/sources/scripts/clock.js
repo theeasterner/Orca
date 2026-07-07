@@ -3,7 +3,10 @@
 /* global Blob */
 
 function Clock (client) {
-  const workerScript = 'onmessage = (e) => { setInterval(() => { postMessage(true) }, e.data)}'
+  // One-shot timer: worker fires a single postMessage after e.data ms, then
+  // waits to be re-armed. This lets each tick have its own duration, which
+  // straight timing (setInterval) can't do, but swing needs.
+  const workerScript = 'onmessage = (e) => { setTimeout(() => { postMessage(true) }, e.data) }'
   const worker = window.URL.createObjectURL(new Blob([workerScript], { type: 'text/javascript' }))
 
   this.isPaused = true
@@ -11,11 +14,16 @@ function Clock (client) {
   this.isPuppet = false
 
   this.speed = { value: 120, target: 120 }
+  this.swing = { value: 50 } // 50 = straight, 1-99 range, persists independent of grid resets
 
   this.start = function () {
     const memory = parseInt(window.localStorage.getItem('bpm'))
     const target = memory >= 60 ? memory : 120
     this.setSpeed(target, target, true)
+
+    const swingMemory = parseInt(window.localStorage.getItem('swing'))
+    this.setSwing(!isNaN(swingMemory) ? swingMemory : 50)
+
     this.play()
   }
 
@@ -43,6 +51,17 @@ function Clock (client) {
       this.setSpeed(this.speed.value + mod, this.speed.value + mod, true)
       client.update()
     }
+  }
+
+  this.setSwing = function (value) {
+    if (isNaN(value)) { return }
+    this.swing.value = clamp(value, 1, 99)
+    window.localStorage.setItem('swing', this.swing.value)
+  }
+
+  this.modSwing = function (mod = 0) {
+    this.setSwing(this.swing.value + mod)
+    client.update()
   }
 
   // Controls
@@ -132,16 +151,38 @@ function Clock (client) {
 
   // Timer
 
+  // Duration, in ms, of one straight 16th note at the given bpm.
+  this.frameLength = function (bpm) {
+    return (60000 / parseInt(bpm)) / 4
+  }
+
+  // Computes the delay for the *next* tick, based on the frame that is
+  // about to run (client.orca.f + 1), so that swing can give alternating
+  // frames different durations while keeping the average tempo constant.
+  //
+  // Convention: odd frames (1, 3, 5...) sit on the fixed reference grid,
+  // spaced exactly 2x a straight 16th apart. Even frames (0, 2, 4...) are
+  // the ones swing pushes later, landing between the two flanking odd
+  // frames at `swing`% of the way across. At swing=50 this is exactly
+  // halfway, i.e. identical to straight timing.
+  this.nextDelay = function () {
+    const pair = this.frameLength(this.speed.value) * 2
+    const ratio = this.swing.value / 100
+    const upcoming = client.orca.f + 1
+    return upcoming % 2 !== 0 ? pair * (1 - ratio) : pair * ratio
+  }
+
   this.setTimer = function (bpm) {
     if (bpm < 60) { console.warn('Clock', 'Error ' + bpm); return }
     this.clearTimer()
     window.localStorage.setItem('bpm', bpm)
     this.timer = new Worker(worker)
-    this.timer.postMessage((60000 / parseInt(bpm)) / 4)
     this.timer.onmessage = (event) => {
       client.io.midi.sendClock()
       client.run()
+      this.timer.postMessage(this.nextDelay())
     }
+    this.timer.postMessage(this.nextDelay())
   }
 
   this.clearTimer = function () {
@@ -157,6 +198,10 @@ function Clock (client) {
   }
 
   // UI
+
+  this.swingToString = function () {
+    return `${this.swing.value}`
+  }
 
   this.toString = function () {
     const diff = this.speed.target - this.speed.value
