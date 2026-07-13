@@ -206,6 +206,6 @@ The midi operator interprets any letter above the chromatic scale as a transpose
 ## Modifications
 
 - Added swing functionality, shown in UI right of bpm.
-- Use Cmd+] and Cmd+[ to increment swing up or down, between 1-99. Fully straight rhythm is swing at 50.
+- Use Cmd+] and Cmd+[ to increment swing up or down, between 50-80. Fully straight rhythm is swing at 50.
 - Similar to $bpm: you can now use $swing: (or $sw:) in the grid or in the command line.
 - You can also modify a standard installation of Orca by (after making your own backups) substituting in client.js, clock.js, commander.js from this version.
